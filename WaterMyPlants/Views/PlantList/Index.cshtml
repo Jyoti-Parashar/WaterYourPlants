@@ -1,0 +1,51 @@
+﻿@model IEnumerable<WaterMyPlants.Models.MyPlant>
+
+@{
+    ViewBag.Title = "Index";
+}
+
+<h2>Index</h2>
+
+<p>
+    @Html.ActionLink("Create New", "Create")
+</p>
+<table class="table">
+    <tr>
+        <th>
+            @Html.DisplayNameFor(model => model.PlantId)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.WaterState)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.StopTime)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.StartTime)
+        </th>
+        <th></th>
+    </tr>
+
+@foreach (var item in Model) {
+    <tr>
+        <td>
+            @Html.DisplayFor(modelItem => item.PlantId)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.WaterState)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.StopTime)
+        </td>
+        <td>
+            @Html.DisplayFor(modelItem => item.StartTime)
+        </td>
+        <td>
+            @Html.ActionLink("Start", "Start", new {  id=item.PlantId  }) |
+            @Html.ActionLink("Details", "Details", new { /* id=item.PrimaryKey */ }) |
+            @Html.ActionLink("Stop", "Stop", new { /* id=item.PrimaryKey */ })
+        </td>
+    </tr>
+}
+
+</table>

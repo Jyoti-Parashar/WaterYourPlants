@@ -8,201 +8,132 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using WaterYourPlants;
 
-namespace WaterYourPlants
+namespace WaterYourPlant
 {
     public partial class Form1 : Form
     {
-        List<Plants> list = new List<Plants>();
-        int seconds,minutes,hours;
+        #region Declaration
+
+        
+        public enum waterstate
+        {
+            idle = 0, rest = 2, stop = 3, start = 1
+        }
+        
         public Form1()
         {
             InitializeComponent();
         }
+        #endregion
+        #region Form Load Events
 
-        private Task ProcessData(List<Plants> list, IProgress<ProgressReport> progress)
-        {
-            int index = 1;
-            int totalProgress = list.Count;
-            var progressReport = new ProgressReport();
-            return Task.Run(() =>
-            {
-                for (int i = 0; i < totalProgress; i++)
-                {
-                    progressReport.PercentComplete = ((index++ * 100) / totalProgress);
-                    progress.Report(progressReport);
-
-                    System.Threading.Thread.Sleep(10000);
-                }
-            }
-            );
-        }
-
-
-
-        private static async Task<string> waterYourPlants(string id)
-        {
-            string s = "";
-            
-            await Task.Delay(10000); // 10 second delay
-
-            s=("Watering of Plants() Finished after 10 Seconds");
-            return s;
-        }
-
-        
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            //label2.Text = "Start Watering"+"\n";
+            List<Plant> list = new List<Plant>();
+            list.Add(new Plant() { PlantId = "Rose", PlantState = Enum.GetName(typeof(waterstate), 0), StartTime=DateTime.Now,StopTime=DateTime.Today});
+            list.Add(new Plant() { PlantId = "Lily", PlantState = Enum.GetName(typeof(waterstate), 0), StartTime = DateTime.Now,StopTime=DateTime.Today});
+            list.Add(new Plant() { PlantId = "Tulip", PlantState = Enum.GetName(typeof(waterstate), 0), StartTime = DateTime.Now, StopTime = DateTime.Today });
+            list.Add(new Plant() { PlantId = "Daisy", PlantState = Enum.GetName(typeof(waterstate), 0), StartTime = DateTime.Now, StopTime = DateTime.Today });
+            dataGridView1.DataSource = list.OrderBy(o => o.PlantId).ToList();
+            dataGridView1.Rows[0].Selected = true;
         }
+        #endregion
 
-        private async void newStart_Click(object sender, EventArgs e)
+        #region Common Function
+
+      
+        private string SetPlantWaterState(Plant plant)
         {
-            timer1.Start();
-           
-            foreach (var item in list)
+            string waterState = "";
+            plant.StartTime = System.DateTime.Now;
+            var diff = plant.StartTime.Subtract(plant.StopTime);
+            if (diff.Hours > 6)
             {
-                if (item.state.Equals((int)waterstate.idle)|| item.state.Equals((int)waterstate.stop))
-                {
-                    string s = "";
-                    //item.waterStatus = true;
-                    item.startTime = System.DateTime.Now;
-                    var diff = item.startTime.Subtract(item.stopTime);
-                    if (diff.Seconds>30  && item.startTime > item.stopTime)
-                    {
-                        item.state = (int)waterstate.watering;
-                        s = "Start Watering......";
-                        lblStatus.Text = s;
-                        s = await waterYourPlants(item.PlantId);
-                        lblStatus.Text = s;
-                    }
-                    else
-                    {
-                        item.state = (int)waterstate.rest;
-                        lblStatus.Text = "Wait for 30 sec";
-                    }
-                }
-
+                plant.PlantState = Enum.GetName(typeof(waterstate), 0);
+                plant.PlantState= Enum.GetName(typeof(waterstate), 1);
+                waterState = plant.PlantState;
             }
-            
-            //var progress = new Progress<ProgressReport>();
-            //progress.ProgressChanged += (o, report) => {
-            //    lblStatus.Text = string.Format("Processing.........{0}%", report.PercentComplete);
-            //    if (checkBox1.Checked)
-            //    {
-            //        progressBar1.Value = report.PercentComplete;
-            //        progressBar1.Update();
-            //    }
-            //    if (checkBox2.Checked)
-            //    {
-            //        progressBar2.Value = report.PercentComplete;
-            //        progressBar2.Update();
-            //    }
-            //    if (checkBox3.Checked)
-            //    {
-            //        progressBar3.Value = report.PercentComplete;
-            //        progressBar3.Update();
-            //    }
-
-            //};
-            //await  ProcessData(list, progress);
-
-
+            else if(diff.TotalSeconds>30)
+            {
+                plant.PlantState = Enum.GetName(typeof(waterstate), 2);
+                plant.PlantState = Enum.GetName(typeof(waterstate), 1);
+                waterState = plant.PlantState;
+            }
+            return waterState;
         }
 
-        private void checkBox1_CheckedChanged(object sender, EventArgs e)
+        private static async Task<string> WaterYourPlant(string id)
         {
-            list.Add(new Plants() { PlantId = "P1", state=(int)waterstate.idle });
-        }
+            string s = "";
 
-        private void checkBox2_CheckedChanged(object sender, EventArgs e)
-        {
-            list.Add(new Plants() { PlantId = "P2" });
-        }
+            await Task.Delay(10000); // 10 second delay
 
+            s = ("Watering of "+id+ " Finished after 10 Seconds");
+            return s;
+        }
+     
+        #endregion
+        #region Button Events
         private void btnStop_Click(object sender, EventArgs e)
         {
-
-            timer1.Stop();
-            foreach (var item in list)
+            List<Plant> list = new List<Plant>(); ;
+            foreach (DataGridViewRow row in dataGridView1.Rows)
             {
-                item.stopTime = DateTime.Now;
-                //item.waterStatus = false;
-                item.state = (int)waterstate.stop;
+                Plant item = row.DataBoundItem as Plant;
+                list.Add(item);
             }
 
-
+            foreach (DataGridViewRow row in dataGridView1.SelectedRows)
+            {
+                Plant plant = row.DataBoundItem as Plant;
+                plant.StopTime = DateTime.Now;
+                plant.PlantState = Enum.GetName(typeof(waterstate), 2);
+                var itemToRemove = list.SingleOrDefault(r => r.PlantId == plant.PlantId);
+                list.Remove(itemToRemove);
+                list.Add(plant);
+            }
+            dataGridView1.DataSource = list.OrderBy(o => o.PlantId).ToList(); ;
 
         }
 
-        private void checkBox3_CheckedChanged(object sender, EventArgs e)
+        private async void button1_Click(object sender, EventArgs e)
         {
-            list.Add(new Plants() { PlantId = "P3" });
+            string s = "";
+            if (dataGridView1.SelectedRows.Count > 0)
+            {
+                foreach (DataGridViewRow row in dataGridView1.SelectedRows)
+                {
+                    Plant plant = row.DataBoundItem as Plant;
+                    if (plant != null && SetPlantWaterState(plant).Equals
+                        (Enum.GetName(typeof(waterstate), 1)))
+                    {
+                        s = "Start Watering......";
+                        lblStatus.Text = s;
+                        s = await WaterYourPlant(plant.PlantId);
+                    }
+                    else if (plant != null && SetPlantWaterState(plant).Equals
+                        (Enum.GetName(typeof(waterstate), 2)))
+                    {
+                        s = "Wait for 30 sec......";
+                    }
+                    lblStatus.Text = s;
+
+                }
+            }
+            else
+            {
+                System.Windows.Forms.MessageBox.Show("Please Select a Plant","Message");
+            }
+           
+            lblStatus.Text = s;
         }
 
-        private void timer1_Tick(object sender, EventArgs e)
-        {
-            //seconds++;
-            
-            //if (seconds>=10 )
-            //{
-              
-            //    timer1.Stop();
-            //    System.Windows.Forms.MessageBox.Show("Time is up!Press stop");
-            //}
-            
-        }
+        #endregion
     }
-
-    public enum waterstate
-    {
-        idle = 0, watering = 1, rest = 2, stop = 3,start=4
-    }
-    public class Plants
-    {
-        public string PlantId { get;  set; }
-        public int state { get; set; }
-       // public bool waterStatus { get;  set; }
-        public DateTime startTime { get; set; }
-        public  DateTime stopTime { get; set; }
-       
-    }
-    
 }
-//public static Task LongProcess()
-//{
-//    return Task.Run(() =>
-//    {
-//        System.Threading.Thread.Sleep(15000);
-//    });
-//}
-
-//public async void CallProcess()
-//{
-//    await LongProcess();
 
 
-//}
 
-//private void btnStart_Click(object sender, EventArgs e)
-//{
-
-//    if (checkBox1.Checked)
-//    {
-//        Plants p1 = new Plants() { PlantId = "P1" };
-//        label2.Text = "watering";
-//        CallProcess();
-//        label2.Text = "finished";
-
-//    }
-//    if (checkBox2.Checked)
-//    {
-//        Plants p2 = new Plants() { PlantId = "P2" };
-//        label3.Text = "watering";
-//        CallProcess();
-//        label3.Text = "finished";
-//    }
-
-
-//}
